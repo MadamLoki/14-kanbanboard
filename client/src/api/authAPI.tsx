@@ -1,43 +1,28 @@
-import { UserLogin } from "../interfaces/UserLogin";
+import { UserLogin } from '../../../client/src/interfaces/UserLogin'; // Adjust the import path as necessary
 
-const login = async (userInfo: UserLogin) => {
-  // TO DO: make a POST request to the login route
-  // and return the response
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve({
-        status: 200,
-        message: "Success",
-        data: {
-          token: "fakeToken",
-          user: {
-            id: 1,
-            email: userInfo.username,
-            name: "Fake User",
-          },
-        },
-      });
-      reject({
-        status: 401,
-        message: "Unauthorized",
-      });
-    }, 1000);
-    reject({
-      status: 500,
-      message: "Internal Server Error",
+export const login = async (userInfo: UserLogin) => {
+  try {
+    console.log('Sending login request:', userInfo);
+    
+    const response = await fetch('/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userInfo),
     });
-    reject({
-      status: 400,
-      message: "Bad Request",
-    });
-    reject({
-      status: 404,
-      message: "Not Found",
-    });
-  });
-  
-}
 
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Response data:', data);
 
-
-export { login };
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to login');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Full error details:', error);
+    throw new Error('Failed to login');
+  }
+};

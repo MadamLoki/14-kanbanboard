@@ -4,24 +4,48 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
 export const login = async (req: Request, res: Response) => {
-  // TO DO: If the user exists and the password is correct, return a JWT token
   const { username, password } = req.body;
-  const user = await User.findOne({ where: { username } });
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid username or password' });
+  
+  try {
+    console.log('Login attempt for username:', username);
+    
+    const user = await User.findOne({ where: { username } });
+    console.log('User found:', user ? 'Yes' : 'No');
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+    
+    const validPassword = await bcrypt.compare(password, user.password);
+    console.log('Password valid:', validPassword ? 'Yes' : 'No');
+    
+    if (!validPassword) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    if (!process.env.JWT_SECRET_KEY) {
+      console.error('JWT_SECRET_KEY is not set!');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        username: user.username 
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: '2h' }
+    );
+    console.log('Token generated successfully');
+
+    res.json({ token });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
   }
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    return res.status(401).json({ message: 'Invalid username or password' });
-  }
-  const token = jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET as string);
-  res.json({ token });
-  return;
+  return res;
 };
 
 const router = Router();
-
-// POST /login - Login a user
 router.post('/login', login);
-
 export default router;
