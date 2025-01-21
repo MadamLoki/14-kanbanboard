@@ -6,15 +6,16 @@ interface JwtPayload {
 }
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  // TO DO: verify the token exists and add the user data to the request object
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
+  
   if (!token) {
-    return res.sendStatus(401);
+    return res.status(401).json({ message: 'No token provided' });
   }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string, (err, user) => {
+
+  jwt.verify(token, process.env.JWT_SECRET_KEY as string, (err, user) => {
     if (err) {
-      return res.sendStatus(403);
+      return res.status(403).json({ message: 'Invalid or expired token' });
     }
     req.user = user as JwtPayload;
     next();
