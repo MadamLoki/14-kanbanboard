@@ -1,20 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import auth from '../utils/auth';
 
 const Navbar = () => {
-  const [ loginCheck, setLoginCheck ] = useState(false);
+  const [loginCheck, setLoginCheck] = useState(auth.loggedIn());
+  const navigate = useNavigate();
 
-  const checkLogin = () => {
-    if(auth.loggedIn()) {
-      setLoginCheck(true);
-    }
-  };
-
+  // Update login status whenever auth state changes
   useEffect(() => {
-    console.log(loginCheck);
+    const checkLogin = () => {
+      const isLoggedIn = auth.loggedIn();
+      setLoginCheck(isLoggedIn);
+    };
+
+    // Check initially
     checkLogin();
-  }, [loginCheck])
+
+    // Set up an interval to periodically check login status
+    const interval = setInterval(checkLogin, 1000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleLogout = () => {
+    auth.logout();
+    setLoginCheck(false);
+    navigate('/login');
+  };
 
   return (
     <div className='nav'>
@@ -22,8 +35,7 @@ const Navbar = () => {
         <Link to='/'>Krazy Kanban Board</Link>
       </div>
       <ul>
-      {
-        !loginCheck ? (
+        {!loginCheck ? (
           <li className='nav-item'>
             <button type='button'>
               <Link to='/login'>Login</Link>
@@ -31,15 +43,14 @@ const Navbar = () => {
           </li>
         ) : (
           <li className='nav-item'>
-            <button type='button' onClick={() => {
-              auth.logout();
-            }}>Logout</button>
+            <button type='button' onClick={handleLogout}>
+              Logout
+            </button>
           </li>
-        )
-      }
+        )}
       </ul>
     </div>
-  )
-}
+  );
+};
 
 export default Navbar;
