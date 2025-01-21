@@ -26,7 +26,7 @@ const Navbar = () => {
   const handleLogout = () => {
     auth.logout();
     setLoginCheck(false);
-    navigate('/login');
+    navigate('/');
   };
 
   return (
