@@ -1,36 +1,37 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-import { Sequelize } from 'sequelize';
-import { UserFactory } from './user.js';
+import sequelize from './db.js';
+import User from './user.js';
 import { TicketFactory } from './ticket.js';
 
-console.log('Attempting DB connection with:', {
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
-});
-
-const sequelize = process.env.DB_URL
-  ? new Sequelize(process.env.DB_URL)
-  : new Sequelize(process.env.DB_NAME || '', process.env.DB_USER || '', process.env.DB_PASSWORD, {
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT) || 5432,
-      dialect: 'postgres',
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false,
-        },
-        decimalNumbers: true,
-      },
-    });
-
-const User = UserFactory(sequelize);
+// Initialize models
 const Ticket = TicketFactory(sequelize);
 
-User.hasMany(Ticket, { foreignKey: 'assignedUserId' });
-Ticket.belongsTo(User, { foreignKey: 'assignedUserId', as: 'assignedUser'});
+// Define associations
+const initializeAssociations = () => {
+  User.hasMany(Ticket, {
+    foreignKey: 'assignedUserId',
+    as: 'tickets'
+  });
+  
+  Ticket.belongsTo(User, {
+    foreignKey: 'assignedUserId',
+    as: 'assignedUser'
+  });
+};
+
+// Set up associations
+initializeAssociations();
+
+// Test the database connection
+const testConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connection established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+};
+
+// Run the connection test
+testConnection();
 
 export { sequelize, User, Ticket };
